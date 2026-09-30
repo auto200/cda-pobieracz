@@ -16,4 +16,5 @@ button.addEventListener("click", async () => {
   }
 
   sendMessage("popupToBG_download", tab.id as TabId);
+  window.close();
 });

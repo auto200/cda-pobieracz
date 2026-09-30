@@ -22,7 +22,7 @@ export default defineBackground(() => {
   onMessage("immediateDownload", ({ data: url }) => {
     browser.downloads.download({
       url,
-      filename: "video.mp4",
+      filename: "media.mp4",
       saveAs: true,
     });
   });

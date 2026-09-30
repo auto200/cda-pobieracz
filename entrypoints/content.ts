@@ -106,21 +106,22 @@ export default defineContentScript({
       const bestVideo = getHighestBandwidth(videoRepresentations);
       const bestAudio = getHighestBandwidth(audioRepresentations);
 
-      if (bestVideo && !bestAudio) {
-        sendMessage("immediateDownload", `${resourcesBaseUrl}/${bestVideo.baseURL}`);
+      if (bestVideo && bestAudio) {
+        sendMessage("contentToBg_OpenDownloadPage", {
+          video: bestVideo,
+          audio: bestAudio,
+          baseUrl: resourcesBaseUrl,
+        });
         return;
       }
 
-      if (bestAudio && !bestVideo) {
-        sendMessage("immediateDownload", `${resourcesBaseUrl}/${bestAudio.baseURL}`);
+      const singleStream = bestVideo ?? bestAudio;
+      if (singleStream) {
+        sendMessage("immediateDownload", `${resourcesBaseUrl}/${singleStream.baseURL}`);
         return;
       }
 
-      sendMessage("contentToBg_OpenDownloadPage", {
-        video: bestVideo!,
-        audio: bestAudio!,
-        baseUrl: resourcesBaseUrl,
-      });
+      console.log("no audio or video representations found");
     });
   },
 });

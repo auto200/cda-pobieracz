@@ -11,6 +11,10 @@ export function getBestResolution(qualities: Record<string, string>) {
   return bestResolution;
 }
 
+export function isNotNullable<T>(val: T | null | undefined): val is T {
+  return val !== undefined && val !== null;
+}
+
 export function getHighestBandwidth<T extends { bandwidth: number }>(
   representations: readonly T[],
 ): T | undefined {

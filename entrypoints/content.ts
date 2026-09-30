@@ -1,5 +1,5 @@
 import { onMessage, sendMessage } from "@/messaging";
-import type { MediaRepresentation } from "@/src/types";
+import { parseRepresentations } from "@/src/manifest";
 import { getBestResolution, getHighestBandwidth } from "@/src/utils";
 
 export default defineContentScript({
@@ -61,45 +61,8 @@ export default defineContentScript({
       const resourcesBaseUrl = resourceUrl.split("/").slice(0, -1).join("/");
 
       const xmlManifestString = await (await fetch(resourceUrl)).text();
-      const doc = new DOMParser().parseFromString(xmlManifestString, "application/xml");
-      const ns = "urn:mpeg:dash:schema:mpd:2011";
 
-      const representations: MediaRepresentation[] = [
-        ...doc.getElementsByTagNameNS(ns, "Representation"),
-      ]
-        .map((rep) => {
-          const baseURL = rep.getElementsByTagNameNS(ns, "BaseURL")[0]?.textContent.trim();
-          if (!baseURL) return undefined;
-
-          const adaptationSet = rep.parentElement;
-
-          const width = Number(rep.getAttribute("width") ?? adaptationSet?.getAttribute("width"));
-          const height = Number(
-            rep.getAttribute("height") ?? adaptationSet?.getAttribute("height"),
-          );
-          const isVideo = Boolean(width && height);
-
-          if (isVideo) {
-            return {
-              type: "video" as const,
-              bandwidth: Number(rep.getAttribute("bandwidth")),
-              codecs: rep.getAttribute("codecs"),
-              mimeType: rep.getAttribute("mimeType"),
-              baseURL,
-              width: width as number,
-              height: height as number,
-            };
-          }
-
-          return {
-            type: "audio" as const,
-            bandwidth: Number(rep.getAttribute("bandwidth")),
-            codecs: rep.getAttribute("codecs"),
-            mimeType: rep.getAttribute("mimeType"),
-            baseURL,
-          };
-        })
-        .filter(isNotNullable);
+      const representations = parseRepresentations(xmlManifestString);
       const audioRepresentations = representations.filter((r) => r.type === "audio");
       const videoRepresentations = representations.filter((r) => r.type === "video");
 
@@ -287,7 +250,3 @@ export type ManifestJson = {
     }>;
   };
 };
-
-function isNotNullable<T>(val: T | null | undefined): val is T {
-  return val !== undefined && val !== null;
-}

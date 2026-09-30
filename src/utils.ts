@@ -10,3 +10,12 @@ export function getBestResolution(qualities: Record<string, string>) {
 
   return bestResolution;
 }
+
+export function getHighestBandwidth<T extends { bandwidth: number }>(
+  representations: readonly T[],
+): T | undefined {
+  return representations.reduce<T | undefined>(
+    (best, rep) => (best === undefined || best.bandwidth < rep.bandwidth ? rep : best),
+    undefined,
+  );
+}

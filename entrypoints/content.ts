@@ -1,6 +1,6 @@
 import { onMessage, sendMessage } from "@/messaging";
-import type { AudioRepresentation, MediaRepresentation, VideoRepresentation } from "@/src/types";
-import { getBestResolution } from "@/src/utils";
+import type { MediaRepresentation } from "@/src/types";
+import { getBestResolution, getHighestBandwidth } from "@/src/utils";
 
 export default defineContentScript({
   matches: ["*://*.cda.pl/*"],
@@ -103,27 +103,8 @@ export default defineContentScript({
       const audioRepresentations = representations.filter((r) => r.type === "audio");
       const videoRepresentations = representations.filter((r) => r.type === "video");
 
-      let bestVideo: undefined | VideoRepresentation = undefined;
-      for (const rep of videoRepresentations) {
-        if (!bestVideo) {
-          bestVideo = rep;
-          continue;
-        }
-        if (bestVideo.bandwidth < rep.bandwidth) {
-          bestVideo = rep;
-        }
-      }
-
-      let bestAudio: undefined | AudioRepresentation = undefined;
-      for (const rep of audioRepresentations) {
-        if (!bestAudio) {
-          bestAudio = rep;
-          continue;
-        }
-        if (bestAudio.bandwidth < rep.bandwidth) {
-          bestAudio = rep;
-        }
-      }
+      const bestVideo = getHighestBandwidth(videoRepresentations);
+      const bestAudio = getHighestBandwidth(audioRepresentations);
 
       if (bestVideo && !bestAudio) {
         sendMessage("immediateDownload", `${resourcesBaseUrl}/${bestVideo.baseURL}`);

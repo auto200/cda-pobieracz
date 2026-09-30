@@ -1,6 +1,7 @@
-import { onMessage, sendMessage } from "@/messaging";
+import { onMessage, sendMessage, type DownloadStatus } from "@/messaging";
 import { parseRepresentations } from "@/src/manifest";
 import { getBestResolution, getHighestBandwidth } from "@/src/utils";
+import { getVideoResourceUrl } from "@/src/videoGetLink";
 
 export default defineContentScript({
   matches: ["*://*.cda.pl/*"],
@@ -13,56 +14,76 @@ export default defineContentScript({
       }, 200);
     }
 
-    onMessage("BGToContent_download", async () => {
+    onMessage("BGToContent_download", async ({ data: requestId }) => {
+      const report = (result: DownloadStatus) => {
+        // Never let a failed report mask the error it was meant to describe.
+        return sendMessage("contentToBg_downloadStatus", result).catch((cause: unknown) => {
+          console.error("could not deliver the download result", cause);
+        });
+      };
+
+      try {
+        await report({ status: "started", requestId });
+        const { videoId, mediaData } = getMediaData();
+
+        const resourceUrl = await getVideoResourceUrl(location.href, {
+          videoId,
+          resolution: getBestResolution(mediaData.video.qualities),
+          ts: mediaData.video.ts,
+          hash2: mediaData.video.hash2,
+        });
+
+        report({ status: "success", requestId });
+        await startDownload(resourceUrl);
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        console.log("error:", message);
+        report({
+          status: "error",
+          message,
+          requestId,
+        });
+      }
+    });
+
+    const getMediaData = () => {
       const videoId = location.href.match(/\/video\/([^/]+)/)?.[1];
 
       if (!videoId) {
-        console.log("videoid not found");
-        return;
+        throw new Error("could not find a video id in the page address");
       }
 
       const mediaplayerElement = document.querySelector(`#mediaplayer${videoId}`);
       if (!mediaplayerElement) {
-        console.log("mediaplayer element not found");
-        return;
+        throw new Error("could not find the video player on the page");
       }
 
       const rawMediaData = mediaplayerElement.getAttribute("player_data");
 
       if (!rawMediaData) {
-        console.log("mediaplayer element did not contain player data");
-        return;
+        throw new Error("the video player did not contain any player data");
       }
 
       const mediaData = JSON.parse(rawMediaData) as MediaData;
       console.log(mediaData);
-      const bestResolution = getBestResolution(mediaData.video.qualities);
-      const res = (await (
-        await fetch(window.location.href, {
-          method: "POST",
-          body: JSON.stringify({
-            id: 3,
-            jsonrpc: "2.0",
-            method: "videoGetLink",
-            params: [videoId, bestResolution, mediaData.video.ts, mediaData.video.hash2, {}],
-          }),
-        })
-      ).json()) as VideoGetLinkResponse;
-      if (import.meta.env.DEV) {
-        console.log(res);
-      }
 
-      const resourceUrl = res.result.resp;
+      return { videoId, mediaData };
+    };
+
+    const startDownload = async (resourceUrl: string) => {
       if (resourceUrl.endsWith(".mp4")) {
         sendMessage("immediateDownload", { url: resourceUrl, filename: "video.mp4" });
         return;
       }
 
       const resourcesBaseUrl = resourceUrl.split("/").slice(0, -1).join("/");
+      const manifestResponse = await fetch(resourceUrl);
 
-      const xmlManifestString = await (await fetch(resourceUrl)).text();
+      if (!manifestResponse.ok) {
+        throw new Error(`manifest request failed with HTTP ${manifestResponse.status}`);
+      }
 
-      const representations = parseRepresentations(xmlManifestString);
+      const representations = parseRepresentations(await manifestResponse.text());
       const audioRepresentations = representations.filter((r) => r.type === "audio");
       const videoRepresentations = representations.filter((r) => r.type === "video");
 
@@ -88,19 +109,10 @@ export default defineContentScript({
         return;
       }
 
-      console.log("no audio or video representations found");
-    });
+      throw new Error("the manifest contained no audio or video representations");
+    };
   },
 });
-
-type VideoGetLinkResponse = {
-  result: {
-    status: string;
-    resp: string;
-  };
-  id: string;
-  jsonrpc: string;
-};
 
 type MediaData = {
   id: string;

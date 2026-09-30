@@ -35,9 +35,25 @@ export default defineBackground(() => {
     });
   });
 
-  onMessage("popupToBG_download", ({ data: tabId }) => {
-    sendMessage("BGToContent_download", undefined, {
-      tabId,
+  onMessage("popupToBG_download", async ({ data: requestId }) => {
+    const [tab] = await browser.tabs.query({
+      active: true,
+      lastFocusedWindow: true,
+    });
+
+    if (!tab?.id) {
+      return;
+    }
+    sendMessage("BGToContent_download", requestId, { tabId: tab.id });
+  });
+
+  onMessage("contentToBg_downloadStatus", ({ data: result }) => {
+    // The popup is only alive while it waits for a result, so a closed popup
+    // simply has nowhere to show the message.
+    sendMessage("BGToPopup_downloadResult", result).catch((cause: unknown) => {
+      if (import.meta.env.DEV) {
+        console.log("no popup was listening for the result", cause);
+      }
     });
   });
 });

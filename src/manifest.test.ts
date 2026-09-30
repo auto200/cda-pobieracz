@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -6,7 +6,15 @@ import { parseRepresentations } from "./manifest";
 import type { AudioRepresentation, VideoRepresentation } from "./types";
 import { getHighestBandwidth } from "./utils";
 
-GlobalRegistrator.register();
+// Registered per file rather than on import, because happy-dom replaces the global
+// fetch with a strict browser
+beforeAll(() => {
+  GlobalRegistrator.register();
+});
+
+afterAll(async () => {
+  await GlobalRegistrator.unregister();
+});
 
 /**
  * Two video AdaptationSets with a single Representation each, both 720p. The Representations carry

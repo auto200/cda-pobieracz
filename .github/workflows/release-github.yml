@@ -1,0 +1,37 @@
+name: Release github
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  add-artifacts-to-github-release:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate release tag matches extension package.json version
+        run: |
+          TAG_NAME=${{ github.event.release.tag_name }}
+          PACKAGE_VERSION=$(jq -r .version package.json)
+          if [ "$TAG_NAME" != "$PACKAGE_VERSION" ]; then
+            echo "Error: Release tag ($TAG_NAME) does not match package.json version ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Zip extensions
+        run: |
+          bun run zip
+          bun run zip:firefox
+
+      - name: Attach artifacts to github release
+        working-directory: apps/debugger-extension/.output
+        run: gh release upload ${{github.event.release.tag_name}} *{chrome,firefox}.zip
+        env:
+          GH_TOKEN: ${{ github.token }}

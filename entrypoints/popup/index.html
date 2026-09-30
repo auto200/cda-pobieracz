@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Default Popup Title</title>
+    <meta name="manifest.type" content="browser_action" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        width: 320px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family:
+          Inter,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        position: relative;
+        overflow: hidden;
+        background: #121212;
+      }
+
+      .download-btn {
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0);
+        border-radius: 4px;
+        display: inline-block;
+        font-weight: normal;
+        line-height: 1.3343;
+        padding: 8px 12px;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+        border-color: #4e7600;
+        font-size: 16px;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.2),
+          0 1px 2px rgba(0, 0, 0, 0.05);
+        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+        text-decoration: none;
+        color: #fff;
+        background-color: #508401;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .download-icon {
+        width: 17px;
+        height: 17px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button class="download-btn" id="downloadButton">
+      <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3v12"></path>
+        <path d="m7 10 5 5 5-5"></path>
+        <path d="M5 21h14"></path>
+      </svg>
+      Pobierz film
+    </button>
+  </body>
+  <script type="module" src="./main.ts"></script>
+</html>

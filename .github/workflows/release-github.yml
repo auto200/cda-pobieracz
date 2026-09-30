@@ -31,7 +31,7 @@ jobs:
           bun run zip:firefox
 
       - name: Attach artifacts to github release
-        working-directory: apps/debugger-extension/.output
+        working-directory: .output
         run: gh release upload ${{github.event.release.tag_name}} *{chrome,firefox}.zip
         env:
           GH_TOKEN: ${{ github.token }}

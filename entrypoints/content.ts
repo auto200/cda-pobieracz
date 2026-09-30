@@ -130,6 +130,11 @@ export default defineContentScript({
         return;
       }
 
+      if (bestAudio && !bestVideo) {
+        sendMessage("immediateDownload", `${resourcesBaseUrl}/${bestAudio.baseURL}`);
+        return;
+      }
+
       sendMessage("contentToBg_OpenDownloadPage", {
         video: bestVideo!,
         audio: bestAudio!,

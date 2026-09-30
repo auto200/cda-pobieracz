@@ -4,25 +4,33 @@ import { onMessage, sendMessage } from "@/messaging";
 
 export default defineBackground(() => {
   onMessage("contentToBg_OpenDownloadPage", async ({ data: downloadData }) => {
-    const tab = await browser.tabs.create({
+    const requestId = crypto.randomUUID();
+
+    const unsubscribe = onMessage("downloadPageToBG_ready", ({ data: readyRequestId }) => {
+      if (readyRequestId !== requestId) {
+        return;
+      }
+
+      unsubscribe();
+      clearTimeout(timerId);
+      sendMessage("BGToDownloadPage_startDownload", { requestId, downloadData });
+    });
+
+    const timerId = setTimeout(() => {
+      unsubscribe();
+      console.error("download page never declared readiness");
+    }, 5000);
+
+    await browser.tabs.create({
       active: true,
-      url: browser.runtime.getURL("/downloadPage.html"),
+      url: browser.runtime.getURL(`/downloadPage.html?requestId=${requestId}`),
     });
-
-    if (!tab.id) {
-      return;
-    }
-    await new Promise((res) => {
-      setTimeout(res, 100);
-    });
-
-    sendMessage("BGToDownloadPage", downloadData);
   });
 
-  onMessage("immediateDownload", ({ data: url }) => {
+  onMessage("immediateDownload", ({ data: { url, filename } }) => {
     browser.downloads.download({
       url,
-      filename: "media.mp4",
+      filename,
       saveAs: true,
     });
   });

@@ -2,7 +2,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { downloadWithProgress } from "@ffmpeg/util";
 import { browser } from "wxt/browser";
 
-import { onMessage } from "@/messaging";
+import { onMessage, sendMessage } from "@/messaging";
 
 import {
   log,
@@ -12,7 +12,14 @@ import {
   showDownloadButton,
 } from "./ui";
 
-onMessage("BGToDownloadPage", async ({ data: downloadData }) => {
+const requestId = new URL(location.href).searchParams.get("requestId");
+
+onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
+  if (request.requestId !== requestId) {
+    return;
+  }
+
+  const { downloadData } = request;
   console.log(downloadData);
   const ffmpeg = new FFmpeg();
   ffmpeg.on("log", ({ message }) => {
@@ -90,7 +97,7 @@ onMessage("BGToDownloadPage", async ({ data: downloadData }) => {
   const download = () => {
     browser.downloads.download({
       url,
-      filename: "video.mp4",
+      filename: downloadData.filename,
       saveAs: true,
     });
   };
@@ -98,3 +105,9 @@ onMessage("BGToDownloadPage", async ({ data: downloadData }) => {
   showDownloadButton(download);
   download();
 });
+
+if (requestId) {
+  sendMessage("downloadPageToBG_ready", requestId);
+} else {
+  log("error: request id missing");
+}

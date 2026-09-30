@@ -54,7 +54,7 @@ export default defineContentScript({
 
       const resourceUrl = res.result.resp;
       if (resourceUrl.endsWith(".mp4")) {
-        sendMessage("immediateDownload", resourceUrl);
+        sendMessage("immediateDownload", { url: resourceUrl, filename: "video.mp4" });
         return;
       }
 
@@ -74,13 +74,17 @@ export default defineContentScript({
           video: bestVideo,
           audio: bestAudio,
           baseUrl: resourcesBaseUrl,
+          filename: "video.mp4",
         });
         return;
       }
 
       const singleStream = bestVideo ?? bestAudio;
       if (singleStream) {
-        sendMessage("immediateDownload", `${resourcesBaseUrl}/${singleStream.baseURL}`);
+        sendMessage("immediateDownload", {
+          url: `${resourcesBaseUrl}/${singleStream.baseURL}`,
+          filename: bestVideo ? "video.mp4" : "audio.mp4",
+        });
         return;
       }
 

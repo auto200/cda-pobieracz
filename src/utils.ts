@@ -23,3 +23,56 @@ export function getHighestBandwidth<T extends { bandwidth: number }>(
     undefined,
   );
 }
+
+export async function downloadToMemory(
+  url: string,
+  onProgress?: (ratio: number) => void,
+): Promise<Uint8Array> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}${response.statusText && ` ${response.statusText}`}`);
+  }
+
+  if (!response.body) {
+    throw new Error("response has no readable body");
+  }
+
+  const declaredLength = Number(response.headers.get("Content-Length"));
+  const lengthKnown = Number.isFinite(declaredLength) && declaredLength > 0;
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (!value) {
+      continue;
+    }
+
+    chunks.push(value);
+    received += value.byteLength;
+
+    if (lengthKnown) {
+      onProgress?.(Math.min(received / declaredLength, 1));
+    }
+  }
+
+  if (lengthKnown && received !== declaredLength) {
+    throw new Error(`incomplete download, received ${received} of ${declaredLength} bytes`);
+  }
+
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  onProgress?.(1);
+  return bytes;
+}

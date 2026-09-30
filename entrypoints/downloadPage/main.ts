@@ -1,8 +1,8 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { downloadWithProgress } from "@ffmpeg/util";
 import { browser } from "wxt/browser";
 
 import { onMessage, sendMessage } from "@/messaging";
+import { downloadToMemory } from "@/src/utils";
 
 import {
   log,
@@ -13,6 +13,28 @@ import {
 } from "./ui";
 
 const requestId = new URL(location.href).searchParams.get("requestId");
+
+const downloadToFfmpeg = async (
+  ffmpeg: FFmpeg,
+  name: string,
+  url: string,
+  onProgress: (ratio: number) => void,
+) => {
+  const startTime = Date.now();
+
+  try {
+    const file = await downloadToMemory(url, onProgress);
+
+    await ffmpeg.writeFile(`${name}.mp4`, file);
+  } catch (cause) {
+    throw new Error(
+      `${name} download failed: ${cause instanceof Error ? cause.message : String(cause)}`,
+      { cause },
+    );
+  }
+
+  log(`${name} pobrano w: ${((Date.now() - startTime) / 1000).toFixed(2)}s`);
+};
 
 onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   if (request.requestId !== requestId) {
@@ -36,36 +58,33 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   });
   log("ffmpeg loaded");
 
-  const response = await Promise.allSettled([
-    (async () => {
-      const videoStartTime = Date.now();
-      const videoFile = new Uint8Array(
-        await downloadWithProgress(
-          `${downloadData.baseUrl}/${downloadData.video.baseURL}`,
-          ({ received, total }) => {
-            setVideoProgress(received / total);
-          },
-        ),
-      );
-      log(`video pobrano w: ${((Date.now() - videoStartTime) / 1000).toFixed(2)}s`);
-
-      await ffmpeg.writeFile("video.mp4", videoFile);
-    })(),
-    (async () => {
-      const audioStartTime = Date.now();
-      const audioFile = new Uint8Array(
-        await downloadWithProgress(
-          `${downloadData.baseUrl}/${downloadData.audio.baseURL}`,
-          ({ received, total }) => {
-            setAudioProgress(received / total);
-          },
-        ),
-      );
-      log(`audio pobrano w: ${((Date.now() - audioStartTime) / 1000).toFixed(2)}s`);
-
-      await ffmpeg.writeFile("audio.mp4", audioFile);
-    })(),
+  const downloads = await Promise.allSettled([
+    downloadToFfmpeg(
+      ffmpeg,
+      "video",
+      `${downloadData.baseUrl}/${downloadData.video.baseURL}`,
+      setVideoProgress,
+    ),
+    downloadToFfmpeg(
+      ffmpeg,
+      "audio",
+      `${downloadData.baseUrl}/${downloadData.audio.baseURL}`,
+      setAudioProgress,
+    ),
   ]);
+
+  const failures = downloads.flatMap((result) =>
+    result.status === "rejected" ? [result.reason] : [],
+  );
+
+  if (failures.length > 0) {
+    for (const failure of failures) {
+      log(failure instanceof Error ? failure.message : String(failure));
+    }
+
+    ffmpeg.terminate();
+    return;
+  }
 
   const renderStartTime = Date.now();
   await ffmpeg.exec([
@@ -91,8 +110,16 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   const data = await ffmpeg.readFile("output.mp4");
   ffmpeg.deleteFile("output.mp4");
 
-  // @ts-ignore
-  const url = URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" }));
+  if (typeof data === "string") {
+    log("ffmpeg returned text data instead of binary");
+    return;
+  }
+
+  // readFile returns a Uint8Array transferred from the ffmpeg worker, so it is backed by a
+  // plain ArrayBuffer rather than a SharedArrayBuffer. Blob's type cannot express that.
+  const url = URL.createObjectURL(
+    new Blob([data as Uint8Array<ArrayBuffer>], { type: "video/mp4" }),
+  );
 
   const download = () => {
     browser.downloads.download({

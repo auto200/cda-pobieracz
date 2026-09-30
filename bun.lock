@@ -6,7 +6,6 @@
       "name": "cda-pobieracz",
       "dependencies": {
         "@ffmpeg/ffmpeg": "^0.12.15",
-        "@ffmpeg/util": "^0.12.2",
         "@webext-core/messaging": "^4.0.0",
       },
       "devDependencies": {
@@ -67,8 +66,6 @@
     "@ffmpeg/ffmpeg": ["@ffmpeg/ffmpeg@0.12.15", "", { "dependencies": { "@ffmpeg/types": "^0.12.4" } }, "sha512-1C8Obr4GsN3xw+/1Ww6PFM84wSQAGsdoTuTWPOj2OizsRDLT4CXTaVjPhkw6ARyDus1B9X/L2LiXHqYYsGnRFw=="],
 
     "@ffmpeg/types": ["@ffmpeg/types@0.12.4", "", {}, "sha512-k9vJQNBGTxE5AhYDtOYR5rO5fKsspbg51gbcwtbkw2lCdoIILzklulcjJfIDwrtn7XhDeF2M+THwJ2FGrLeV6A=="],
-
-    "@ffmpeg/util": ["@ffmpeg/util@0.12.2", "", {}, "sha512-ouyoW+4JB7WxjeZ2y6KpRvB+dLp7Cp4ro8z0HIVpZVCM7AwFlHa0c4R8Y/a4M3wMqATpYKhC7lSFHQ0T11MEDw=="],
 
     "@fluent/syntax": ["@fluent/syntax@0.19.0", "", {}, "sha512-5D2qVpZrgpjtqU4eNOcWGp1gnUCgjfM+vKGE2y03kKN6z5EBhtx0qdRFbg8QuNNj8wXNoX93KJoYb+NqoxswmQ=="],
 

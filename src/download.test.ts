@@ -1,0 +1,112 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+
+import { downloadToMemory } from "./utils";
+
+const PAYLOAD = new Uint8Array(64 * 1024).map((_, index) => index % 251);
+
+let server: ReturnType<typeof Bun.serve>;
+let origin: string;
+
+beforeAll(() => {
+  server = Bun.serve({
+    port: 0,
+    fetch(request) {
+      const path = new URL(request.url).pathname;
+
+      switch (path) {
+        case "/ok":
+          return new Response(PAYLOAD, {
+            headers: { "Content-Type": "video/mp4" },
+          });
+        case "/forbidden":
+          return new Response("nope", { status: 403, statusText: "Forbidden" });
+        case "/gone":
+          return new Response("gone", { status: 410 });
+        case "/no-content-length": {
+          const stream = new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(PAYLOAD.subarray(0, 1024));
+              controller.enqueue(PAYLOAD.subarray(1024));
+              controller.close();
+            },
+          });
+
+          return new Response(stream, { headers: { "Content-Type": "video/mp4" } });
+        }
+        default:
+          return new Response("not found", { status: 404 });
+      }
+    },
+  });
+
+  origin = `http://localhost:${server.port}`;
+});
+
+afterAll(() => {
+  server.stop(true);
+});
+
+describe("downloadToMemory", () => {
+  test("returns the exact bytes served", async () => {
+    const bytes = await downloadToMemory(`${origin}/ok`);
+
+    expect(bytes).toBeInstanceOf(Uint8Array);
+    expect(bytes.byteLength).toBe(PAYLOAD.byteLength);
+    expect(bytes).toEqual(PAYLOAD);
+  });
+
+  test("reports progress up to 1", async () => {
+    const ratios: number[] = [];
+
+    await downloadToMemory(`${origin}/ok`, (ratio) => ratios.push(ratio));
+
+    expect(ratios.length).toBeGreaterThan(1);
+    expect(ratios.at(-1)).toBe(1);
+    expect(ratios.every((ratio) => ratio >= 0 && ratio <= 1)).toBe(true);
+    expect([...ratios].sort((a, b) => a - b)).toEqual(ratios);
+  });
+
+  test("rejects on 403 instead of returning the error body", async () => {
+    expect(downloadToMemory(`${origin}/forbidden`)).rejects.toThrow("HTTP 403 Forbidden");
+  });
+
+  test("rejects on 410", async () => {
+    expect(downloadToMemory(`${origin}/gone`)).rejects.toThrow("HTTP 410");
+  });
+
+  test("rejects on 404", async () => {
+    expect(downloadToMemory(`${origin}/missing`)).rejects.toThrow("HTTP 404");
+  });
+
+  test("handles a response without Content-Length", async () => {
+    const ratios: number[] = [];
+
+    const bytes = await downloadToMemory(`${origin}/no-content-length`, (ratio) =>
+      ratios.push(ratio),
+    );
+
+    expect(bytes).toEqual(PAYLOAD);
+    expect(ratios).toEqual([1]);
+  });
+
+  test("works without a progress callback", async () => {
+    expect(await downloadToMemory(`${origin}/ok`)).toEqual(PAYLOAD);
+  });
+
+  test("rejects when fewer bytes arrive than Content-Length promised", async () => {
+    const truncated = new Response(PAYLOAD.subarray(0, 100), {
+      headers: { "Content-Length": String(PAYLOAD.byteLength) },
+    });
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => truncated) as unknown as typeof fetch;
+
+    try {
+      expect(downloadToMemory("https://example.test/video.mp4")).rejects.toThrow(
+        `incomplete download, received 100 of ${PAYLOAD.byteLength} bytes`,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});

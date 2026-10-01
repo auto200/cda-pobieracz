@@ -114,10 +114,10 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
 
   log(`wyrenderowano w: ${((Date.now() - renderStartTime) / 1000).toFixed(2)}s`);
 
-  void ffmpeg.deleteFile("audio.mp4");
-  void ffmpeg.deleteFile("video.mp4");
+  await ffmpeg.deleteFile("audio.mp4");
+  await ffmpeg.deleteFile("video.mp4");
   const data = await ffmpeg.readFile("output.mp4");
-  void ffmpeg.deleteFile("output.mp4");
+  await ffmpeg.deleteFile("output.mp4");
   ffmpeg.terminate();
 
   if (typeof data === "string") {

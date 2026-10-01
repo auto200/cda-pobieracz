@@ -15,6 +15,42 @@ export function isNotNullable<T>(val: T | null | undefined): val is T {
   return val !== undefined && val !== null;
 }
 
+/**
+ * Limits `fn` to at most one call per `waitMs`: the first call runs immediately, later ones
+ * collapse into a single trailing call carrying the newest value. The trailing call is what lets a
+ * stream that finishes mid-interval still paint its final value.
+ */
+export function throttleValue(fn: (value: number) => void, waitMs: number) {
+  let lastRun = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let latest: number | undefined;
+
+  return (value: number) => {
+    const wait = waitMs - (Date.now() - lastRun);
+
+    if (wait <= 0) {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timer = latest = undefined;
+      }
+      lastRun = Date.now();
+      fn(value);
+      return;
+    }
+
+    latest = value;
+
+    timer ??= setTimeout(() => {
+      timer = undefined;
+      lastRun = Date.now();
+      if (latest !== undefined) {
+        fn(latest);
+        latest = undefined;
+      }
+    }, wait);
+  };
+}
+
 export function getHighestBandwidth<T extends { bandwidth: number }>(
   representations: readonly T[],
 ): T | undefined {

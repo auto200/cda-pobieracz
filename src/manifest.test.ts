@@ -122,7 +122,13 @@ const audioOnly = (representations: ReturnType<typeof parseRepresentations>) =>
 
 describe("parseRepresentations", () => {
   describe("dimensions on the AdaptationSet", () => {
-    const representations = parseRepresentations(dimensionsOnAdaptationSet);
+    // Parsing needs happy-dom's DOMParser, so it must happen after the outer beforeAll
+    // has registered the environment rather than at module scope.
+    let representations: ReturnType<typeof parseRepresentations>;
+
+    beforeAll(() => {
+      representations = parseRepresentations(dimensionsOnAdaptationSet);
+    });
 
     test("parses every Representation", () => {
       expect(representations).toHaveLength(3);
@@ -163,7 +169,11 @@ describe("parseRepresentations", () => {
   });
 
   describe("dimensions on the Representation", () => {
-    const representations = parseRepresentations(dimensionsOnRepresentation);
+    let representations: ReturnType<typeof parseRepresentations>;
+
+    beforeAll(() => {
+      representations = parseRepresentations(dimensionsOnRepresentation);
+    });
 
     test("parses every Representation across multiple AdaptationSets", () => {
       expect(representations).toHaveLength(5);

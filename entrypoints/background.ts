@@ -13,7 +13,7 @@ export default defineBackground(() => {
 
       unsubscribe();
       clearTimeout(timerId);
-      sendMessage("BGToDownloadPage_startDownload", { requestId, downloadData });
+      sendMessage("BGToDownloadPage_startDownload", { requestId, downloadData }).catch(console.log);
     });
 
     const timerId = setTimeout(() => {
@@ -44,7 +44,7 @@ export default defineBackground(() => {
     if (!tab?.id) {
       return;
     }
-    sendMessage("BGToContent_download", requestId, { tabId: tab.id });
+    sendMessage("BGToContent_download", requestId, { tabId: tab.id }).catch(console.log);
   });
 
   onMessage("contentToBg_downloadStatus", ({ data: result }) => {

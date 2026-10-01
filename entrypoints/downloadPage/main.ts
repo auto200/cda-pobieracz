@@ -109,6 +109,7 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   ffmpeg.deleteFile("video.mp4");
   const data = await ffmpeg.readFile("output.mp4");
   ffmpeg.deleteFile("output.mp4");
+  ffmpeg.terminate();
 
   if (typeof data === "string") {
     log("ffmpeg returned text data instead of binary");

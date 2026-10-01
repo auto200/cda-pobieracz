@@ -56,9 +56,12 @@ export async function getVideoResourceUrl(
 
   if (typeof resourceUrl !== "string" || resourceUrl.length === 0) {
     const status = payload.result?.status;
+    const cause = "The video may be premium, blocked in your region, or no longer available.";
 
+    // Each branch owns its full punctuation so neither a missing nor a present status
+    // can leave a gap, and no punctuation sits next to the interpolated part.
     throw new Error(
-      `CDA returned no link ${status ? `(${status})` : ""}. The video may be premium, blocked in your region, or no longer available.`,
+      status ? `CDA returned no link (${status}). ${cause}` : `CDA returned no link. ${cause}`,
     );
   }
 

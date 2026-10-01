@@ -1,3 +1,7 @@
+import { throttleValue } from "@/src/utils";
+
+const PROGRESS_THROTTLE_MS = 60;
+
 const videoProgress = document.querySelector<HTMLProgressElement>("#video-progress")!;
 const audioProgress = document.querySelector<HTMLProgressElement>("#audio-progress")!;
 const renderProgress = document.querySelector<HTMLProgressElement>("#render-progress")!;
@@ -9,25 +13,18 @@ const renderProgressValue = document.querySelector("#render-progress-value")!;
 const logs = document.querySelector<HTMLTextAreaElement>("#logs")!;
 const downloadButton = document.querySelector<HTMLButtonElement>("#downloadButton")!;
 
-export function setVideoProgress(value: number) {
-  value = value * 100;
-  videoProgress.value = value;
-  videoProgressValue.textContent = `${Math.round(value)}%`;
-}
+// Each bar gets its own throttled setter: audio and video download concurrently, so a
+// shared throttle would let one stream's updates suppress the other's.
+const renderBar = (bar: HTMLProgressElement, label: Element): ((ratio: number) => void) =>
+  throttleValue((ratio) => {
+    const value = ratio * 100;
+    bar.value = value;
+    label.textContent = `${Math.round(value)}%`;
+  }, PROGRESS_THROTTLE_MS);
 
-export function setAudioProgress(value: number) {
-  value = value * 100;
-
-  audioProgress.value = value;
-  audioProgressValue.textContent = `${Math.round(value)}%`;
-}
-
-export function setRenderProgress(value: number) {
-  value = value * 100;
-
-  renderProgress.value = value;
-  renderProgressValue.textContent = `${Math.round(value)}%`;
-}
+export const setVideoProgress = renderBar(videoProgress, videoProgressValue);
+export const setAudioProgress = renderBar(audioProgress, audioProgressValue);
+export const setRenderProgress = renderBar(renderProgress, renderProgressValue);
 
 export function log(message: string) {
   logs.value += `${message}\n`;

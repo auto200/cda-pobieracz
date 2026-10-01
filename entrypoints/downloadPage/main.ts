@@ -52,10 +52,19 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
     setRenderProgress(progress);
   });
 
-  await ffmpeg.load({
-    coreURL: browser.runtime.getURL("/ffmpeg-core.js"),
-    wasmURL: browser.runtime.getURL("/ffmpeg-core.wasm"),
-  });
+  // Without classWorkerURL the worker URL is derived from `import.meta.url`, which during
+  // development points at the dev server instead of the extension.
+  try {
+    await ffmpeg.load({
+      classWorkerURL: browser.runtime.getURL("/ffmpegWorker.js"),
+      coreURL: browser.runtime.getURL("/ffmpeg-core.js"),
+      wasmURL: browser.runtime.getURL("/ffmpeg-core.wasm"),
+    });
+  } catch (cause) {
+    // Without this the rejection would only surface in the background worker console.
+    log(`ffmpeg load failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+    return;
+  }
   log("ffmpeg loaded");
 
   const downloads = await Promise.allSettled([

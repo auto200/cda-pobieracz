@@ -82,7 +82,12 @@
   },
   "overrides": [
     {
-      "files": ["entrypoints/background.ts", "entrypoints/content.ts", "wxt.config.ts"],
+      "files": [
+        "entrypoints/background.ts",
+        "entrypoints/content.ts",
+        "entrypoints/ffmpegWorker.ts",
+        "wxt.config.ts"
+      ],
       "rules": {
         "no-default-export": "off"
       }

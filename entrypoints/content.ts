@@ -1,7 +1,13 @@
 // oxlint-disable typescript/no-explicit-any
 import { onMessage, sendMessage, type DownloadStatus } from "@/messaging";
 import { parseRepresentations } from "@/src/manifest";
-import { getBestAudio, getBestResolution, getBestVideo, getCdaVideoId } from "@/src/utils";
+import {
+  getBestAudio,
+  getBestResolution,
+  getBestVideo,
+  getCdaVideoId,
+  toSafeFilename,
+} from "@/src/utils";
 import { getVideoResourceUrl } from "@/src/videoGetLink";
 
 export default defineContentScript({
@@ -26,6 +32,9 @@ export default defineContentScript({
       try {
         await report({ status: "started", requestId });
         const { videoId, mediaData, resolution } = getMediaData();
+        // The title arrives percent-encoded, and every branch below needs a name to write to, so
+        // it is turned into a filename once here rather than at each use.
+        const filename = toSafeFilename(mediaData.video.title);
 
         const resourceUrl = await getVideoResourceUrl(location.href, {
           videoId,
@@ -34,7 +43,7 @@ export default defineContentScript({
           hash2: mediaData.video.hash2,
         });
 
-        await startDownload(resourceUrl);
+        await startDownload(resourceUrl, filename);
         await report({ status: "success", requestId });
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
@@ -75,9 +84,10 @@ export default defineContentScript({
       return { videoId, mediaData, resolution };
     };
 
-    const startDownload = async (resourceUrl: string) => {
+    const startDownload = async (resourceUrl: string, filenameWithoutExtension: string) => {
+      const filename = filenameWithoutExtension + ".mp4";
       if (resourceUrl.endsWith(".mp4")) {
-        await sendMessage("immediateDownload", { url: resourceUrl, filename: "video.mp4" });
+        await sendMessage("immediateDownload", { url: resourceUrl, filename });
         return;
       }
 
@@ -100,7 +110,7 @@ export default defineContentScript({
           video: bestVideo,
           audio: bestAudio,
           baseUrl: resourcesBaseUrl,
-          filename: "video.mp4",
+          filename,
         });
         return;
       }
@@ -109,7 +119,7 @@ export default defineContentScript({
       if (singleStream) {
         await sendMessage("immediateDownload", {
           url: `${resourcesBaseUrl}/${singleStream.baseURL}`,
-          filename: bestVideo ? "video.mp4" : "audio.mp4",
+          filename,
         });
         return;
       }

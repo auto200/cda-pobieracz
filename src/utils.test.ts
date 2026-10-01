@@ -20,8 +20,34 @@ describe("getBestResolution", () => {
       },
       "auto",
     ],
+    [
+      {
+        auto: "auto",
+        "1080p": "hd",
+      },
+      "hd",
+    ],
+    [
+      {
+        "9p": "nine",
+        "1080p": "hd",
+        "480p": "sd",
+      },
+      "hd",
+    ],
+    [
+      {
+        "1080p": "hd",
+        "2160p": "uhd",
+      },
+      "uhd",
+    ],
   ])("returns correct quality", (qs, expected) => {
     expect(getBestResolution(qs)).toBe(expected);
+  });
+
+  test("returns undefined when there are no qualities", () => {
+    expect(getBestResolution({})).toBeUndefined();
   });
 });
 
@@ -119,22 +145,22 @@ describe("throttleValue", () => {
   });
 
   test("keeps throttled functions independent of each other", async () => {
-    const video: number[] = [];
-    const audio: number[] = [];
-    const setVideo = throttleValue((value) => video.push(value), WAIT);
-    const setAudio = throttleValue((value) => audio.push(value), WAIT);
+    const videos: number[] = [];
+    const audios: number[] = [];
+    const setVideo = throttleValue((value) => videos.push(value), WAIT);
+    const setAudio = throttleValue((value) => audios.push(value), WAIT);
 
     setVideo(0.1);
     setVideo(0.2);
     setAudio(0.5);
     setAudio(0.6);
 
-    expect(video).toEqual([0.1]);
-    expect(audio).toEqual([0.5]);
+    expect(videos).toEqual([0.1]);
+    expect(audios).toEqual([0.5]);
 
     await sleep(WAIT * 3);
 
-    expect(video).toEqual([0.1, 0.2]);
-    expect(audio).toEqual([0.5, 0.6]);
+    expect(videos).toEqual([0.1, 0.2]);
+    expect(audios).toEqual([0.5, 0.6]);
   });
 });

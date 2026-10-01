@@ -12,7 +12,7 @@ export function parseRepresentations(manifestXml: string): MediaRepresentation[]
 }
 
 function parseRepresentation(rep: Element): MediaRepresentation | undefined {
-  const baseURL = rep.getElementsByTagNameNS(DASH_NS, "BaseURL")[0]?.textContent?.trim();
+  const baseURL = rep.getElementsByTagNameNS(DASH_NS, "BaseURL")[0]?.textContent.trim();
   if (!baseURL) {
     return undefined;
   }

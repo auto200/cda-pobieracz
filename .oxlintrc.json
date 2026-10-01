@@ -1,0 +1,94 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "promise", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error",
+    "restriction": "error"
+  },
+  "options": {
+    "denyWarnings": true,
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error",
+    "typeCheck": true
+  },
+  "ignorePatterns": ["public/**"],
+  // heavily inspired by https://github.com/kasper573/mp/blob/da6bad74f1ca001b915275a41eed70d223550000/.oxlintrc.json
+  "rules": {
+    "no-unsafe-type-assertion": "off",
+    "no-async-await": "off",
+    "explicit-function-return-type": "off",
+    "typescript/promise-function-async": "off",
+    "no-use-before-define": "off",
+    "no-void": "off",
+    "explicit-module-boundary-types": "off",
+    "no-rest-spread-properties": "off",
+    "no-optional-chaining": "off",
+    "no-plusplus": "off",
+    "always-return": "off",
+    "no-unassigned-import": "off",
+    "no-empty-function": "off",
+    "no-relative-parent-imports": "off",
+    "no-map-spread": "off",
+    "typescript/switch-exhaustiveness-check": "error",
+    "default-case": "off",
+    "no-multi-comp": "off",
+    "only-export-components": "off",
+    "no-undefined": "off",
+    "require-await": "error",
+    "eqeqeq": "error",
+    "max-depth": "error",
+    "max-nested-callbacks": "error",
+    "no-array-constructor": "error",
+    "no-case-declarations": "error",
+    "no-constructor-return": "error",
+    "no-else-return": "error",
+    "no-fallthrough": "error",
+    "no-inner-declarations": "error",
+    "no-lonely-if": "error",
+    "no-new-wrappers": "error",
+    "no-object-constructor": "error",
+    "no-prototype-builtins": "error",
+    "no-redeclare": "error",
+    "no-self-compare": "error",
+    "no-throw-literal": "error",
+    "radix": "error",
+    "symbol-description": "error",
+    "checked-requires-onchange-or-readonly": "error",
+    "rules-of-hooks": "error",
+    "ban-ts-comment": [
+      "error",
+      {
+        "ts-expect-error": "allow-with-description"
+      }
+    ],
+    "no-unsafe-function-type": "error",
+    "prefer-enum-initializers": "error",
+    "prefer-ts-expect-error": "error",
+    "adjacent-overload-signatures": "error",
+    "consistent-generic-constructors": "error",
+    "consistent-type-definitions": ["error", "type"],
+    "consistent-type-imports": "error",
+    "no-inferrable-types": "error",
+    "prefer-for-of": "error",
+    "prefer-function-type": "error",
+    "prefer-namespace-keyword": "error",
+    "self-closing-comp": "error",
+    "no-danger": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "eslint/no-duplicate-imports": "error",
+    "no-console": "off"
+  },
+  "overrides": [
+    {
+      "files": ["entrypoints/background.ts", "entrypoints/content.ts", "wxt.config.ts"],
+      "rules": {
+        "no-default-export": "off"
+      }
+    }
+  ],
+  "env": {
+    "builtin": true
+  }
+}

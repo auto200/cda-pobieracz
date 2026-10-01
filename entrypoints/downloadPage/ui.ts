@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-non-null-assertion
 import { throttleValue } from "@/src/utils";
 
 const PROGRESS_THROTTLE_MS = 60;

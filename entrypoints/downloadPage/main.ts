@@ -105,10 +105,10 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
 
   log(`wyrenderowano w: ${((Date.now() - renderStartTime) / 1000).toFixed(2)}s`);
 
-  ffmpeg.deleteFile("audio.mp4");
-  ffmpeg.deleteFile("video.mp4");
+  void ffmpeg.deleteFile("audio.mp4");
+  void ffmpeg.deleteFile("video.mp4");
   const data = await ffmpeg.readFile("output.mp4");
-  ffmpeg.deleteFile("output.mp4");
+  void ffmpeg.deleteFile("output.mp4");
   ffmpeg.terminate();
 
   if (typeof data === "string") {
@@ -122,8 +122,8 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
     new Blob([data as Uint8Array<ArrayBuffer>], { type: "video/mp4" }),
   );
 
-  const download = () => {
-    browser.downloads.download({
+  const download = async () => {
+    await browser.downloads.download({
       url,
       filename: downloadData.filename,
       saveAs: true,
@@ -131,11 +131,11 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   };
 
   showDownloadButton(download);
-  download();
+  await download();
 });
 
 if (requestId) {
-  sendMessage("downloadPageToBG_ready", requestId);
+  await sendMessage("downloadPageToBG_ready", requestId);
 } else {
   log("error: request id missing");
 }

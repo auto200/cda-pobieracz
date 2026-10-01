@@ -27,8 +27,8 @@ export default defineBackground(() => {
     });
   });
 
-  onMessage("immediateDownload", ({ data: { url, filename } }) => {
-    browser.downloads.download({
+  onMessage("immediateDownload", async ({ data: { url, filename } }) => {
+    await browser.downloads.download({
       url,
       filename,
       saveAs: true,

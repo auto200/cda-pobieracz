@@ -67,8 +67,8 @@ beforeAll(() => {
   origin = `http://localhost:${server.port}`;
 });
 
-afterAll(() => {
-  server.stop(true);
+afterAll(async () => {
+  await server.stop(true);
 });
 
 describe("getVideoResourceUrl", () => {
@@ -88,49 +88,49 @@ describe("getVideoResourceUrl", () => {
     });
   });
 
-  test("rejects on a non-2xx response", async () => {
+  test("rejects on a non-2xx response", () => {
     expect(getVideoResourceUrl(`${origin}/http-error`, PARAMS)).rejects.toThrow(
       "CDA API responded with HTTP 500",
     );
   });
 
-  test("rejects on a body that is not JSON", async () => {
+  test("rejects on a body that is not JSON", () => {
     expect(getVideoResourceUrl(`${origin}/not-json`, PARAMS)).rejects.toThrow(
       "CDA API responded with a body that is not JSON",
     );
   });
 
-  test("rejects on a null payload", async () => {
+  test("rejects on a null payload", () => {
     expect(getVideoResourceUrl(`${origin}/null-payload`, PARAMS)).rejects.toThrow(
       "CDA API responded with an unexpected payload",
     );
   });
 
-  test("surfaces the message of a json-rpc error", async () => {
+  test("surfaces the message of a json-rpc error", () => {
     expect(getVideoResourceUrl(`${origin}/json-rpc-error`, PARAMS)).rejects.toThrow(
       "CDA API rejected the request: premium only",
     );
   });
 
-  test("falls back to the error code when there is no message", async () => {
+  test("falls back to the error code when there is no message", () => {
     expect(getVideoResourceUrl(`${origin}/error-without-message`, PARAMS)).rejects.toThrow(
       "CDA API rejected the request: code -32000",
     );
   });
 
-  test("rejects when there is no result at all", async () => {
+  test("rejects when there is no result at all", () => {
     expect(getVideoResourceUrl(`${origin}/no-result`, PARAMS)).rejects.toThrow(
       "CDA returned no link. The video may be premium, blocked in your region, or no longer available.",
     );
   });
 
-  test("rejects on an empty link and reports the status", async () => {
+  test("rejects on an empty link and reports the status", () => {
     expect(getVideoResourceUrl(`${origin}/empty-resp`, PARAMS)).rejects.toThrow(
       "CDA returned no link (ERROR). The video may be premium, blocked in your region, or no longer available.",
     );
   });
 
-  test("rejects when the link is not a string", async () => {
+  test("rejects when the link is not a string", () => {
     expect(getVideoResourceUrl(`${origin}/numeric-resp`, PARAMS)).rejects.toThrow(
       "CDA returned no link (OK). The video may be premium, blocked in your region, or no longer available.",
     );

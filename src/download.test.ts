@@ -42,8 +42,8 @@ beforeAll(() => {
   origin = `http://localhost:${server.port}`;
 });
 
-afterAll(() => {
-  server.stop(true);
+afterAll(async () => {
+  await server.stop(true);
 });
 
 describe("downloadToMemory", () => {
@@ -66,15 +66,15 @@ describe("downloadToMemory", () => {
     expect([...ratios].sort((a, b) => a - b)).toEqual(ratios);
   });
 
-  test("rejects on 403 instead of returning the error body", async () => {
+  test("rejects on 403 instead of returning the error body", () => {
     expect(downloadToMemory(`${origin}/forbidden`)).rejects.toThrow("HTTP 403 Forbidden");
   });
 
-  test("rejects on 410", async () => {
+  test("rejects on 410", () => {
     expect(downloadToMemory(`${origin}/gone`)).rejects.toThrow("HTTP 410");
   });
 
-  test("rejects on 404", async () => {
+  test("rejects on 404", () => {
     expect(downloadToMemory(`${origin}/missing`)).rejects.toThrow("HTTP 404");
   });
 
@@ -93,13 +93,13 @@ describe("downloadToMemory", () => {
     expect(await downloadToMemory(`${origin}/ok`)).toEqual(PAYLOAD);
   });
 
-  test("rejects when fewer bytes arrive than Content-Length promised", async () => {
+  test("rejects when fewer bytes arrive than Content-Length promised", () => {
     const truncated = new Response(PAYLOAD.subarray(0, 100), {
       headers: { "Content-Length": String(PAYLOAD.byteLength) },
     });
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => truncated) as unknown as typeof fetch;
+    globalThis.fetch = (() => truncated) as unknown as typeof fetch;
 
     try {
       expect(downloadToMemory("https://example.test/video.mp4")).rejects.toThrow(

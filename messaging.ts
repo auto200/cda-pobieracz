@@ -2,7 +2,7 @@ import { defineExtensionMessaging } from "@webext-core/messaging";
 
 import type { AudioRepresentation, VideoRepresentation } from "./src/types";
 
-interface ProtocolMap {
+type ProtocolMap = {
   popupToBG_download(requestId: string): void;
   BGToContent_download(requestId: string): void;
   contentToBg_OpenDownloadPage(downloadData: DownloadData): void;
@@ -11,7 +11,7 @@ interface ProtocolMap {
   immediateDownload(download: ImmediateDownload): void;
   downloadPageToBG_ready(requestId: string): void;
   BGToDownloadPage_startDownload(request: DownloadRequest): void;
-}
+};
 
 export type DownloadStatus = (
   | { status: "started" }

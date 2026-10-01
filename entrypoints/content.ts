@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { onMessage, sendMessage, type DownloadStatus } from "@/messaging";
 import { parseRepresentations } from "@/src/manifest";
 import { getBestResolution, getHighestBandwidth } from "@/src/utils";
@@ -24,21 +25,21 @@ export default defineContentScript({
 
       try {
         await report({ status: "started", requestId });
-        const { videoId, mediaData } = getMediaData();
+        const { videoId, mediaData, resolution } = getMediaData();
 
         const resourceUrl = await getVideoResourceUrl(location.href, {
           videoId,
-          resolution: getBestResolution(mediaData.video.qualities),
+          resolution,
           ts: mediaData.video.ts,
           hash2: mediaData.video.hash2,
         });
 
-        report({ status: "success", requestId });
+        await report({ status: "success", requestId });
         await startDownload(resourceUrl);
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
         console.log("error:", message);
-        report({
+        await report({
           status: "error",
           message,
           requestId,
@@ -65,14 +66,18 @@ export default defineContentScript({
       }
 
       const mediaData = JSON.parse(rawMediaData) as MediaData;
-      console.log(mediaData);
+      const resolution = getBestResolution(mediaData.video.qualities);
 
-      return { videoId, mediaData };
+      if (resolution === undefined) {
+        throw new Error("the player data did not list any usable quality");
+      }
+
+      return { videoId, mediaData, resolution };
     };
 
     const startDownload = async (resourceUrl: string) => {
       if (resourceUrl.endsWith(".mp4")) {
-        sendMessage("immediateDownload", { url: resourceUrl, filename: "video.mp4" });
+        await sendMessage("immediateDownload", { url: resourceUrl, filename: "video.mp4" });
         return;
       }
 
@@ -91,7 +96,7 @@ export default defineContentScript({
       const bestAudio = getHighestBandwidth(audioRepresentations);
 
       if (bestVideo && bestAudio) {
-        sendMessage("contentToBg_OpenDownloadPage", {
+        await sendMessage("contentToBg_OpenDownloadPage", {
           video: bestVideo,
           audio: bestAudio,
           baseUrl: resourcesBaseUrl,
@@ -102,7 +107,7 @@ export default defineContentScript({
 
       const singleStream = bestVideo ?? bestAudio;
       if (singleStream) {
-        sendMessage("immediateDownload", {
+        await sendMessage("immediateDownload", {
           url: `${resourcesBaseUrl}/${singleStream.baseURL}`,
           filename: bestVideo ? "video.mp4" : "audio.mp4",
         });

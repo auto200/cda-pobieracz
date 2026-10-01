@@ -1,14 +1,29 @@
-export function getBestResolution(qualities: Record<string, string>) {
-  let resolutions = Object.keys(qualities)
-    .filter((key) => key.endsWith("p") && !Number.isNaN(Number.parseInt(key.slice(0, -1))))
-    .map((q) => Number.parseInt(q));
+const isNumericQuality = (key: string) =>
+  key.endsWith("p") && !Number.isNaN(Number.parseInt(key.slice(0, -1), 10));
 
-  let bestResolution = qualities[Object.keys(qualities)[0] as string] as string;
-  if (resolutions.length) {
-    bestResolution = qualities[Math.max(...resolutions) + "p"] as string;
+const qualityValue = (key: string) => Number.parseInt(key.slice(0, -1), 10);
+
+/**
+ * Picks the highest vertical resolution, falling back to the first listed quality when none of the
+ * keys is numeric (for example a lone `auto`). Returns undefined when there are no qualities at
+ * all, which callers must handle rather than assume away.
+ */
+export function getBestResolution(qualities: Record<string, string>): string | undefined {
+  const [first] = Object.keys(qualities);
+
+  if (first === undefined) {
+    return undefined;
   }
 
-  return bestResolution;
+  const numeric = Object.keys(qualities).filter(isNumericQuality);
+
+  if (numeric.length === 0) {
+    return qualities[first];
+  }
+
+  const best = numeric.reduce((a, b) => (qualityValue(a) >= qualityValue(b) ? a : b));
+
+  return qualities[best];
 }
 
 export function isNotNullable<T>(val: T | null | undefined): val is T {
@@ -82,10 +97,12 @@ export async function downloadToMemory(
   let received = 0;
 
   for (;;) {
+    // oxlint-disable-next-line no-await-in-loop
     const { done, value } = await reader.read();
     if (done) {
       break;
     }
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (!value) {
       continue;
     }

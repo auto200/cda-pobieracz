@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - run: bun format
+      - run: bun lint
+
       - name: Zip extensions
         run: |
           bun run zip

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { AudioRepresentation, VideoRepresentation } from "./types";
-import { getBestResolution, getHighestBandwidth, throttleValue } from "./utils";
+import { getBestAudio, getBestResolution, getBestVideo, throttleValue } from "./utils";
 
 describe("getBestResolution", () => {
   test.each([
@@ -59,48 +59,85 @@ const audio = (bandwidth: number, baseURL: string): AudioRepresentation => ({
   mimeType: null,
 });
 
-const video = (bandwidth: number, baseURL: string): VideoRepresentation => ({
+const video = (bandwidth: number, baseURL: string, height = 1080): VideoRepresentation => ({
   type: "video",
   bandwidth,
   baseURL,
   codecs: null,
   mimeType: null,
-  width: 1920,
-  height: 1080,
+  width: Math.round((height * 16) / 9),
+  height,
 });
 
-describe("getHighestBandwidth", () => {
-  const audioLow = audio(128_000, "audio-low.mp4");
-  const audioHigh = audio(256_000, "audio-high.mp4");
-  const videoLow = video(800_000, "video-low.mp4");
-  const videoHigh = video(2_400_000, "video-high.mp4");
+describe("getBestAudio", () => {
+  const stereo = audio(128_000, "audio-stereo.mp4");
+  const stereoHigh = audio(192_000, "audio-stereo-high.mp4");
+  const surround = audio(256_000, "audio-surround.mp4");
+  const quiet = audio(64_000, "audio-quiet.mp4");
 
   test.each([
-    [[audioLow, audioHigh], audioHigh],
-    [[audioHigh, audioLow], audioHigh],
-    [[videoLow, videoHigh], videoHigh],
-    [[videoHigh, videoLow], videoHigh],
-    [[audioLow], audioLow],
-    [[videoHigh, audioHigh, videoLow], videoHigh],
-  ])("returns the representation with the highest bandwidth", (representations, expected) => {
-    expect(getHighestBandwidth(representations)).toBe(expected);
+    [[stereo, surround], surround],
+    [[surround, stereo], surround],
+    [[quiet, stereoHigh, stereo], stereoHigh],
+    [[stereo], stereo],
+  ])("returns the audio with the highest bandwidth", (audios, expected) => {
+    expect(getBestAudio(audios)).toBe(expected);
   });
 
   test("returns undefined for an empty list", () => {
-    expect(getHighestBandwidth<AudioRepresentation>([])).toBeUndefined();
+    expect(getBestAudio([])).toBeUndefined();
   });
 
-  test("keeps the first representation when bandwidths are equal", () => {
-    const first = video(1_000_000, "first.mp4");
-    const second = video(1_000_000, "second.mp4");
+  test("keeps the first audio when bandwidths are equal", () => {
+    const first = audio(1_000_000, "first.mp4");
+    const second = audio(1_000_000, "second.mp4");
 
-    expect(getHighestBandwidth([first, second])).toBe(first);
+    expect(getBestAudio([first, second])).toBe(first);
   });
 
-  test("returns a representation with zero bandwidth", () => {
+  test("returns audio with zero bandwidth", () => {
     const zero = audio(0, "zero.mp4");
 
-    expect(getHighestBandwidth([zero])).toBe(zero);
+    expect(getBestAudio([zero])).toBe(zero);
+  });
+});
+
+describe("getBestVideo", () => {
+  const hd = video(2_400_000, "video-1080p.mp4", 1080);
+  const sd = video(3_000_000, "video-480p.mp4", 480);
+  const hdSteady = video(1_500_000, "video-1080p-steady.mp4", 1080);
+  const sdSteady = video(500_000, "video-480p-steady.mp4", 480);
+
+  test.each([
+    [[hd, sd], hd],
+    [[sd, hd], hd],
+    [[sd, hd, sdSteady], hd],
+    [[hd], hd],
+  ])("returns the tallest video regardless of bandwidth", (videos, expected) => {
+    expect(getBestVideo(videos)).toBe(expected);
+  });
+
+  test("returns the highest bandwidth video among equally tall ones", () => {
+    expect(getBestVideo([hdSteady, hd, sd])).toBe(hd);
+    expect(getBestVideo([hd, hdSteady, sd])).toBe(hd);
+  });
+
+  test("keeps the first video when height and bandwidth are both equal", () => {
+    const first = video(1_000_000, "first.mp4", 720);
+    const second = video(1_000_000, "second.mp4", 720);
+
+    expect(getBestVideo([first, second])).toBe(first);
+  });
+
+  test("falls back to bandwidth when no video declares a height", () => {
+    const sized = video(1_000_000, "sized.mp4", 0);
+    const alsoSized = video(2_000_000, "also-sized.mp4", 0);
+
+    expect(getBestVideo([sized, alsoSized])).toBe(alsoSized);
+  });
+
+  test("returns undefined for an empty list", () => {
+    expect(getBestVideo([])).toBeUndefined();
   });
 });
 

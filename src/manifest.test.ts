@@ -4,7 +4,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { parseRepresentations } from "./manifest";
 import type { AudioRepresentation, VideoRepresentation } from "./types";
-import { getHighestBandwidth } from "./utils";
+import { getBestAudio, getBestVideo } from "./utils";
 
 // Registered per file rather than on import, because happy-dom replaces the global
 // fetch with a strict browser
@@ -143,8 +143,8 @@ describe("parseRepresentations", () => {
       ]);
     });
 
-    test("parses the highest bandwidth video", () => {
-      expect(getHighestBandwidth(videoOnly(representations))).toEqual({
+    test("parses the best video", () => {
+      expect(getBestVideo(videoOnly(representations))).toEqual({
         type: "video",
         bandwidth: 1_293_442,
         codecs: "avc1.42c01e",
@@ -190,9 +190,9 @@ describe("parseRepresentations", () => {
       ]);
     });
 
-    test("selects the highest bandwidth video and audio", () => {
-      const video = getHighestBandwidth(videoOnly(representations));
-      const audio = getHighestBandwidth(audioOnly(representations));
+    test("selects the best video and audio", () => {
+      const video = getBestVideo(videoOnly(representations));
+      const audio = getBestAudio(audioOnly(representations));
 
       expect(video?.baseURL).toBe("hd7aa24d3751a1a0448a25e63af3a30a1a.mp4");
       expect(video?.height).toBe(1080);

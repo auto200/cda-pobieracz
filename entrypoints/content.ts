@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any
 import { onMessage, sendMessage, type DownloadStatus } from "@/messaging";
 import { parseRepresentations } from "@/src/manifest";
-import { getBestResolution, getHighestBandwidth } from "@/src/utils";
+import { getBestAudio, getBestResolution, getBestVideo } from "@/src/utils";
 import { getVideoResourceUrl } from "@/src/videoGetLink";
 
 export default defineContentScript({
@@ -92,8 +92,8 @@ export default defineContentScript({
       const audioRepresentations = representations.filter((r) => r.type === "audio");
       const videoRepresentations = representations.filter((r) => r.type === "video");
 
-      const bestVideo = getHighestBandwidth(videoRepresentations);
-      const bestAudio = getHighestBandwidth(audioRepresentations);
+      const bestVideo = getBestVideo(videoRepresentations);
+      const bestAudio = getBestAudio(audioRepresentations);
 
       if (bestVideo && bestAudio) {
         await sendMessage("contentToBg_OpenDownloadPage", {

@@ -1,3 +1,5 @@
+import type { AudioRepresentation, VideoRepresentation } from "./types";
+
 const isNumericQuality = (key: string) =>
   key.endsWith("p") && !Number.isNaN(Number.parseInt(key.slice(0, -1), 10));
 
@@ -66,13 +68,35 @@ export function throttleValue(fn: (value: number) => void, waitMs: number) {
   };
 }
 
-export function getHighestBandwidth<T extends { bandwidth: number }>(
-  representations: readonly T[],
-): T | undefined {
-  return representations.reduce<T | undefined>(
+/**
+ * Picks the loudest audio, which is the one carrying the highest bandwidth. Audio has no dimensions
+ * to compare, so bandwidth is the only signal available. Returns undefined when there is no audio
+ * at all.
+ */
+export function getBestAudio(
+  representations: AudioRepresentation[],
+): AudioRepresentation | undefined {
+  return representations.reduce<AudioRepresentation | undefined>(
     (best, rep) => (best === undefined || best.bandwidth < rep.bandwidth ? rep : best),
     undefined,
   );
+}
+
+/**
+ * Picks the tallest video, breaking ties between equally tall videos by bandwidth. Bandwidth alone
+ * would be wrong here: a shorter stream is often encoded at a higher bitrate than a taller one.
+ * Returns undefined when there are no videos at all.
+ */
+export function getBestVideo(
+  representations: VideoRepresentation[],
+): VideoRepresentation | undefined {
+  return representations.reduce<VideoRepresentation | undefined>((best, rep) => {
+    if (best === undefined || rep.height > best.height) {
+      return rep;
+    }
+
+    return rep.height === best.height && rep.bandwidth > best.bandwidth ? rep : best;
+  }, undefined);
 }
 
 export async function downloadToMemory(

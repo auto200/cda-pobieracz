@@ -48,6 +48,7 @@ onMessage("BGToPopup_downloadResult", ({ data: result }) => {
 
   switch (result.status) {
     case "started": {
+      setStatus("Pobieranie...", true);
       break;
     }
     case "error": {
@@ -56,13 +57,12 @@ onMessage("BGToPopup_downloadResult", ({ data: result }) => {
     }
     case "success": {
       window.close();
+      break;
     }
   }
 });
 
 button.addEventListener("click", async () => {
-  setStatus("Pobieranie...", true);
-
   try {
     await sendMessage("popupToBG_download", requestId);
   } catch (cause) {

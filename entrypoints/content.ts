@@ -34,8 +34,8 @@ export default defineContentScript({
           hash2: mediaData.video.hash2,
         });
 
-        await report({ status: "success", requestId });
         await startDownload(resourceUrl);
+        await report({ status: "success", requestId });
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
         console.log("error:", message);

@@ -127,7 +127,7 @@ export async function downloadToMemory(
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}${response.statusText && ` ${response.statusText}`}`);
+    throw new Error(`HTTP ${response.status} ${response.statusText}`.trim());
   }
 
   if (!response.body) {

@@ -2,7 +2,7 @@
   "name": "cda-pobieracz",
   "description": "Rozszerzenie przeglądarki do pobierania filmów z CDA.pl, z automatycznym łączeniem rozdzielonych ścieżek audio i wideo.",
   "private": true,
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "scripts": {
     "dev": "wxt",

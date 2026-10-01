@@ -1,4 +1,7 @@
+import { browser } from "wxt/browser";
+
 import { onMessage, sendMessage } from "@/messaging";
+import { getCdaVideoId } from "@/src/utils";
 
 const requestId = crypto.randomUUID();
 
@@ -14,6 +17,28 @@ const setStatus = (message: string, disabled: boolean) => {
   status.textContent = message;
   button.disabled = disabled;
 };
+
+// The button stays disabled until the active tab turns out to hold a video, so the popup never
+// offers to download from a page that has no content script to talk to.
+const allowDownload = async () => {
+  const [tab] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
+  // `tab.url` is only filled in for tabs the extension may read, which is every cda.pl tab.
+  // Everywhere else it stays undefined, which is exactly the case to report.
+  const isVideoPage = tab?.url !== undefined && getCdaVideoId(tab.url) !== undefined;
+
+  if (!isVideoPage) {
+    setStatus("Otwórz stronę z filmem na cda.pl, aby móc go pobrać.", true);
+    return;
+  }
+
+  button.disabled = false;
+};
+
+try {
+  await allowDownload();
+} catch (cause) {
+  setStatus(cause instanceof Error ? cause.message : String(cause), true);
+}
 
 onMessage("BGToPopup_downloadResult", ({ data: result }) => {
   console.log(result);

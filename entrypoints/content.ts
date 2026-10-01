@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-explicit-any
 import { onMessage, sendMessage, type DownloadStatus } from "@/messaging";
 import { parseRepresentations } from "@/src/manifest";
-import { getBestAudio, getBestResolution, getBestVideo } from "@/src/utils";
+import { getBestAudio, getBestResolution, getBestVideo, getCdaVideoId } from "@/src/utils";
 import { getVideoResourceUrl } from "@/src/videoGetLink";
 
 export default defineContentScript({
@@ -48,7 +48,7 @@ export default defineContentScript({
     });
 
     const getMediaData = () => {
-      const videoId = location.href.match(/\/video\/([^/]+)/)?.[1];
+      const videoId = getCdaVideoId(location.href);
 
       if (!videoId) {
         throw new Error("could not find a video id in the page address");

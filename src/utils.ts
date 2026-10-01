@@ -1,5 +1,26 @@
 import type { AudioRepresentation, VideoRepresentation } from "./types";
 
+const CDA_HOSTNAMES = new Set(["cda.pl", "www.cda.pl"]);
+
+// CDA serves a video page under `/video/{id}`, optionally followed by a variant segment
+// such as `/vfilm`.
+const CDA_VIDEO_PATH = /^\/video\/([^/]+)/;
+
+/**
+ * Returns the video id when the url points at a cda.pl video page, otherwise undefined. The
+ * hostname has to match exactly, otherwise a lookalike domain such as `cda.pl.example.com` would
+ * pass.
+ */
+export function getCdaVideoId(url: string): string | undefined {
+  const { hostname, pathname } = new URL(url);
+
+  if (!CDA_HOSTNAMES.has(hostname)) {
+    return undefined;
+  }
+
+  return pathname.match(CDA_VIDEO_PATH)?.[1];
+}
+
 const isNumericQuality = (key: string) =>
   key.endsWith("p") && !Number.isNaN(Number.parseInt(key.slice(0, -1), 10));
 

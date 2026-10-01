@@ -1,7 +1,37 @@
 import { describe, expect, test } from "bun:test";
 
 import type { AudioRepresentation, VideoRepresentation } from "./types";
-import { getBestAudio, getBestResolution, getBestVideo, throttleValue } from "./utils";
+import {
+  getBestAudio,
+  getBestResolution,
+  getBestVideo,
+  getCdaVideoId,
+  throttleValue,
+} from "./utils";
+
+describe("getCdaVideoId", () => {
+  test.each([
+    ["https://www.cda.pl/video/13054129d3w", "13054129d3w"],
+    ["https://www.cda.pl/video/13054129d3aa/vfilm", "13054129d3aa"],
+    ["https://cda.pl/video/13054129d3", "13054129d3"],
+    ["https://www.cda.pl/video/13054129d3?fs=0#player", "13054129d3"],
+  ])("returns the video id of a video page", (url, expected) => {
+    expect(getCdaVideoId(url)).toBe(expected);
+  });
+
+  test.each([
+    "https://www.cda.pl/",
+    "https://www.cda.pl/games/123",
+    "https://www.cda.pl/video/",
+    "https://www.cda.pl/videoteka",
+    "https://www.cda.pl.evil.com/video/13054129d3",
+    "https://evil.com/video/13054129d3",
+    "https://notcda.pl/video/13054129d3",
+    "http://www.cda.pl.evil.com/video/13054129d3",
+  ])("returns undefined for %p", (url) => {
+    expect(getCdaVideoId(url)).toBeUndefined();
+  });
+});
 
 describe("getBestResolution", () => {
   test.each([

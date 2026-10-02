@@ -131,6 +131,11 @@
         overflow-wrap: anywhere;
         text-overflow: ellipsis;
       }
+
+      #eta {
+        font-weight: bold;
+        color: #fff;
+      }
     </style>
   </head>
 
@@ -163,6 +168,16 @@
         </div>
 
         <progress id="render-progress" value="0" max="100"></progress>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-header">
+          <span></span>
+          <span class="progress-value">
+            <span id="eta">&nbsp;</span>
+            <span id="downloadSpeed">&nbsp;</span>
+          </span>
+        </div>
       </div>
 
       <div class="progress-section">

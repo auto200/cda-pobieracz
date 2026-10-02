@@ -392,7 +392,7 @@ describe("throttleValue", () => {
 
   test("runs the first call immediately", () => {
     const calls: number[] = [];
-    const throttled = throttleValue((value) => calls.push(value), WAIT);
+    const throttled = throttleValue((value: number) => calls.push(value), WAIT);
 
     throttled(0.1);
 
@@ -401,7 +401,7 @@ describe("throttleValue", () => {
 
   test("collapses a burst into one trailing call with the latest argument", async () => {
     const calls: number[] = [];
-    const throttled = throttleValue((value) => calls.push(value), WAIT);
+    const throttled = throttleValue((value: number) => calls.push(value), WAIT);
 
     throttled(0.1);
     throttled(0.2);
@@ -416,7 +416,7 @@ describe("throttleValue", () => {
 
   test("allows a new call once the window has passed", async () => {
     const calls: number[] = [];
-    const throttled = throttleValue((value) => calls.push(value), WAIT);
+    const throttled = throttleValue((value: number) => calls.push(value), WAIT);
 
     throttled(0.1);
     await sleep(WAIT * 3);
@@ -428,8 +428,8 @@ describe("throttleValue", () => {
   test("keeps throttled functions independent of each other", async () => {
     const videos: number[] = [];
     const audios: number[] = [];
-    const setVideo = throttleValue((value) => videos.push(value), WAIT);
-    const setAudio = throttleValue((value) => audios.push(value), WAIT);
+    const setVideo = throttleValue((value: number) => videos.push(value), WAIT);
+    const setAudio = throttleValue((value: number) => audios.push(value), WAIT);
 
     setVideo(0.1);
     setVideo(0.2);

@@ -182,12 +182,16 @@ export function toSafeFilename(rawEncodedTitle: string, fallback = "video"): str
  * collapse into a single trailing call carrying the newest value. The trailing call is what lets a
  * stream that finishes mid-interval still paint its final value.
  */
-export function throttleValue(fn: (value: number) => void, waitMs: number) {
+export function throttleValue<T extends unknown[]>(
+  fn: (...value: T) => void,
+  waitMs: number,
+  options?: { staggerFirst: boolean },
+) {
   let lastRun = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let latest: number | undefined;
+  let latest: T | undefined;
 
-  return (value: number) => {
+  return (...value: T) => {
     const wait = waitMs - (Date.now() - lastRun);
 
     if (wait <= 0) {
@@ -195,8 +199,14 @@ export function throttleValue(fn: (value: number) => void, waitMs: number) {
         clearTimeout(timer);
         timer = latest = undefined;
       }
+
+      if (options?.staggerFirst && lastRun === 0) {
+        lastRun = Date.now();
+        return;
+      }
+
       lastRun = Date.now();
-      fn(value);
+      fn(...value);
       return;
     }
 
@@ -206,8 +216,9 @@ export function throttleValue(fn: (value: number) => void, waitMs: number) {
       timer = undefined;
       lastRun = Date.now();
       if (latest !== undefined) {
-        fn(latest);
+        const current = latest;
         latest = undefined;
+        fn(...current);
       }
     }, wait);
   };
@@ -244,9 +255,15 @@ export function getBestVideo(
   }, undefined);
 }
 
+export type DownloadProgress = {
+  received: number;
+  total: number | undefined;
+  ratio: number;
+};
+
 export async function downloadToMemory(
   url: string,
-  onProgress?: (ratio: number) => void,
+  onProgress?: (progress: DownloadProgress) => void,
 ): Promise<Uint8Array> {
   const response = await fetch(url);
 
@@ -260,6 +277,7 @@ export async function downloadToMemory(
 
   const declaredLength = Number(response.headers.get("Content-Length"));
   const lengthKnown = Number.isFinite(declaredLength) && declaredLength > 0;
+  const totalBytes = lengthKnown ? declaredLength : undefined;
 
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -279,8 +297,10 @@ export async function downloadToMemory(
     chunks.push(value);
     received += value.byteLength;
 
+    const ratio = lengthKnown ? Math.min(received / declaredLength, 1) : 1;
+
     if (lengthKnown) {
-      onProgress?.(Math.min(received / declaredLength, 1));
+      onProgress?.({ received, total: totalBytes, ratio });
     }
   }
 
@@ -295,6 +315,6 @@ export async function downloadToMemory(
     offset += chunk.byteLength;
   }
 
-  onProgress?.(1);
+  onProgress?.({ received, total: totalBytes, ratio: 1 });
   return bytes;
 }

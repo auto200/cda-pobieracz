@@ -1,16 +1,19 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { Estimation } from "arrival-time";
 import { browser } from "wxt/browser";
 
 import { onMessage, sendMessage } from "@/messaging";
-import { downloadToMemory } from "@/src/utils";
+import { downloadToMemory, type DownloadProgress } from "@/src/utils";
 
 import {
   log,
   setAudioProgress,
+  setETAStats,
   setFilename,
   setRenderProgress,
   setVideoProgress,
-  showDownloadButton,
+  activateDownloadButton,
+  hideETAStats,
 } from "./ui";
 
 const requestId = new URL(location.href).searchParams.get("requestId");
@@ -19,7 +22,7 @@ const downloadToFfmpeg = async (
   ffmpeg: FFmpeg,
   name: string,
   url: string,
-  onProgress: (ratio: number) => void,
+  onProgress: (progress: DownloadProgress) => void,
 ) => {
   const startTime = Date.now();
 
@@ -70,20 +73,59 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
   }
   log("ffmpeg loaded");
 
+  const mediaEstimation = new Estimation();
+  const mediaTotalProgress = {
+    audio: {
+      received: 0,
+      total: 0,
+    },
+    video: {
+      received: 0,
+      total: 0,
+    },
+  };
+
+  const handleMediaBytes = (progress: DownloadProgress, media: "audio" | "video") => {
+    if (progress.total !== undefined && progress.total > 0) {
+      mediaTotalProgress[media].received = progress.received;
+      mediaTotalProgress[media].total = progress.total;
+    } else {
+      mediaTotalProgress[media].received = progress.received || 1;
+      mediaTotalProgress[media].total = progress.received || 1;
+    }
+
+    mediaEstimation.update(
+      mediaTotalProgress.audio.received + mediaTotalProgress.video.received,
+      mediaTotalProgress.audio.total + mediaTotalProgress.video.total,
+    );
+
+    const mediaMeasure = mediaEstimation.measure(1024 * 1024);
+
+    setETAStats(mediaMeasure.estimate, mediaMeasure.speed);
+  };
+
   const downloads = await Promise.allSettled([
     downloadToFfmpeg(
       ffmpeg,
       "video",
       `${downloadData.baseUrl}/${downloadData.video.baseURL}`,
-      setVideoProgress,
+      (progress) => {
+        setVideoProgress(progress.ratio);
+        handleMediaBytes(progress, "video");
+      },
     ),
     downloadToFfmpeg(
       ffmpeg,
       "audio",
       `${downloadData.baseUrl}/${downloadData.audio.baseURL}`,
-      setAudioProgress,
+      (progress) => {
+        setAudioProgress(progress.ratio);
+        handleMediaBytes(progress, "audio");
+      },
     ),
   ]);
+
+  hideETAStats();
 
   const failures = downloads.flatMap((result) =>
     result.status === "rejected" ? [result.reason] : [],
@@ -142,7 +184,7 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
     });
   };
 
-  showDownloadButton(download);
+  activateDownloadButton(download);
   await download();
 });
 

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { downloadToMemory } from "./utils";
+import { downloadToMemory, type DownloadProgress } from "./utils";
 
 const PAYLOAD = new Uint8Array(64 * 1024).map((_, index) => index % 251);
 
@@ -56,14 +56,18 @@ describe("downloadToMemory", () => {
   });
 
   test("reports progress up to 1", async () => {
-    const ratios: number[] = [];
+    const progresses: DownloadProgress[] = [];
 
-    await downloadToMemory(`${origin}/ok`, (ratio) => ratios.push(ratio));
+    await downloadToMemory(`${origin}/ok`, (progress) => progresses.push(progress));
 
-    expect(ratios.length).toBeGreaterThan(1);
-    expect(ratios.at(-1)).toBe(1);
-    expect(ratios.every((ratio) => ratio >= 0 && ratio <= 1)).toBe(true);
-    expect([...ratios].sort((a, b) => a - b)).toEqual(ratios);
+    expect(progresses.length).toBeGreaterThan(1);
+    expect(progresses.at(-1)).toEqual({
+      received: 65536,
+      total: 65536,
+      ratio: 1,
+    });
+    expect(progresses.every((progress) => progress.ratio >= 0 && progress.ratio <= 1)).toBe(true);
+    expect([...progresses].sort((a, b) => a.ratio - b.ratio)).toEqual(progresses);
   });
 
   test("rejects on 403 instead of returning the error body", () => {
@@ -79,14 +83,20 @@ describe("downloadToMemory", () => {
   });
 
   test("handles a response without Content-Length", async () => {
-    const ratios: number[] = [];
+    const progresses: DownloadProgress[] = [];
 
-    const bytes = await downloadToMemory(`${origin}/no-content-length`, (ratio) =>
-      ratios.push(ratio),
+    const bytes = await downloadToMemory(`${origin}/no-content-length`, (progress) =>
+      progresses.push(progress),
     );
 
     expect(bytes).toEqual(PAYLOAD);
-    expect(ratios).toEqual([1]);
+    expect(progresses).toEqual([
+      {
+        ratio: 1,
+        received: 65536,
+        total: undefined,
+      },
+    ]);
   });
 
   test("works without a progress callback", async () => {

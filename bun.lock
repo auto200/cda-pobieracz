@@ -7,6 +7,7 @@
       "dependencies": {
         "@ffmpeg/ffmpeg": "^0.12.15",
         "@webext-core/messaging": "^4.0.0",
+        "arrival-time": "^1.0.6",
       },
       "devDependencies": {
         "@happy-dom/global-registrator": "^20.14.5",
@@ -288,6 +289,8 @@
     "array-differ": ["array-differ@4.0.0", "", {}, "sha512-Q6VPTLMsmXZ47ENG3V+wQyZS1ZxXMxFyYzA+Z/GMrJ6yIutAIEf9wTyroTzmGjNfox9/h3GdGBCVh43GVFx4Uw=="],
 
     "array-union": ["array-union@3.0.1", "", {}, "sha512-1OvF9IbWwaeiM9VhzYXVQacMibxpXOMYVNIvMtKRyX9SImBXpKcFr8XvFDeEslCyuH/t6KRt7HEO94AlP8Iatw=="],
+
+    "arrival-time": ["arrival-time@1.0.6", "", {}, "sha512-iWdmcH/sGHt2z8On3QWqj55vh7NBnx9AEvrK99m84Eyik4+30g50+ZlcszwAT8541eDwvkDBTy8CgDHEYBtetw=="],
 
     "async": ["async@3.2.6", "", {}, "sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA=="],
 

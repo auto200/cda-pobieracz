@@ -7,6 +7,7 @@ import { downloadToMemory } from "@/src/utils";
 import {
   log,
   setAudioProgress,
+  setFilename,
   setRenderProgress,
   setVideoProgress,
   showDownloadButton,
@@ -43,6 +44,8 @@ onMessage("BGToDownloadPage_startDownload", async ({ data: request }) => {
 
   const { downloadData } = request;
   console.log(downloadData);
+  setFilename(downloadData.filename);
+
   const ffmpeg = new FFmpeg();
   ffmpeg.on("log", ({ message }) => {
     log(message);

@@ -13,6 +13,7 @@ const renderProgressValue = document.querySelector("#render-progress-value")!;
 
 const logs = document.querySelector<HTMLTextAreaElement>("#logs")!;
 const downloadButton = document.querySelector<HTMLButtonElement>("#downloadButton")!;
+const filename = document.querySelector<HTMLSpanElement>("#filename")!;
 
 // Each bar gets its own throttled setter: audio and video download concurrently, so a
 // shared throttle would let one stream's updates suppress the other's.
@@ -30,6 +31,11 @@ export const setRenderProgress = renderBar(renderProgress, renderProgressValue);
 export function log(message: string) {
   logs.value += `${message}\n`;
   logs.scrollTop = logs.scrollHeight;
+}
+
+export function setFilename(value: string) {
+  filename.textContent = value;
+  filename.hidden = false;
 }
 
 export function showDownloadButton(onclick: () => void) {

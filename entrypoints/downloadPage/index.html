@@ -110,6 +110,27 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+
+      .download-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .download-btn {
+        /* Inside the row the button should not stretch to fill the available width. */
+        flex: 0 0 auto;
+      }
+
+      .download-filename {
+        color: #aaa;
+        font-size: 14px;
+        /* Long titles have to wrap or truncate rather than push the button off the page. */
+        min-width: 0;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        text-overflow: ellipsis;
+      }
     </style>
   </head>
 
@@ -157,7 +178,7 @@
         ></textarea>
       </div>
 
-      <div>
+      <div class="download-row">
         <button class="download-btn" id="downloadButton" disabled>
           <svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v12"></path>
@@ -166,6 +187,7 @@
           </svg>
           Pobierz film
         </button>
+        <span class="download-filename" id="filename" hidden></span>
       </div>
     </div>
 
